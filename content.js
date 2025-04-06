@@ -15,7 +15,7 @@ async function callGemini(prompt) {
       ]
     })
   });
-
+  if (!response.ok) return "Error with API";
   const data = await response.json();
   const result = data?.candidates?.[0]?.content?.parts?.[0]?.text;
   return result;
@@ -27,6 +27,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     showAnswer(request.text);
   }
 });
+
+function hideOnClickOutside(popup) {
+    const outsideClickListener = event => {
+        if (!popup.contains(event.target) && isVisible(popup)) { 
+          popup.style.display = 'none';
+          removeClickListener();
+        }
+    }
+
+    const removeClickListener = () => {
+        document.removeEventListener('click', outsideClickListener);
+    }
+
+    document.addEventListener('click', outsideClickListener);
+}
+
+const isVisible = elem => !!elem && !!( elem.offsetWidth || elem.offsetHeight || elem.getClientRects().length );
 
 async function showAnswer(selectedText) {
   // Create the popup element
@@ -59,7 +76,8 @@ async function showAnswer(selectedText) {
     }
 
     if (!found) {
-      popup.innerText = "Gemini: " + await callGemini("Give the shortest and most accurate answer: " + selectedText);
+      geminiAnswer = "Gemini: " + await callGemini("Give the shortest and most accurate answer: " + selectedText);
+      popup.innerText = geminiAnswer;
     }
   } catch (error) {
     popup.innerText = "Error searching for answer.";
@@ -77,10 +95,5 @@ async function showAnswer(selectedText) {
     popup.style.left = `${rect.left + window.scrollX}px`;
   }
 
-  // Remove the popup after a few seconds
-  setTimeout(() => {
-    if (popup) {
-      popup.remove();
-    }
-  }, 3000);
+  hideOnClickOutside(popup);
 }
