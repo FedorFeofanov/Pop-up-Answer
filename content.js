@@ -47,11 +47,14 @@ const isVisible = elem => !!elem && !!( elem.offsetWidth || elem.offsetHeight ||
 
 async function showAnswer(selectedText) {
   // Create the popup element
+  const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const popup = document.createElement("div");
   popup.id = "answer-popup";
   popup.style.position = "absolute";
-  popup.style.backgroundColor = "white";
-  popup.style.border = "1px solid #ddd";
+  popup.style.backgroundColor = isDarkMode ? "#222" : "white";
+  popup.style.color = isDarkMode ? "white" : "black";
+  popup.style.border = "1px solid";
+  popup.style.borderColor = isDarkMode ? "black": "#ddd"
   popup.style.padding = "10px";
   popup.style.zIndex = 1000;
   popup.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.1)";
