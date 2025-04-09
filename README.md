@@ -78,3 +78,11 @@ popup.html & popup.css
 ## Psihologija
 [year][theme number][lesson number]
 For example it commit may contain 2.10.3 Psihologija, that means that the material is from the second grade, theme number is 10 (for example Licnost), the lesson number is 3 (for example 3. Bihevioristicke, humanisticke i socijalno-kognitivne teorije licnosti)
+
+# How can you contribute?
+## Adding answers
+The easiest way of adding answers is by opeining answers.json file, clicking *Edit this file* and adding questions with answers following the standart, both of them should be inside of double quotes "", there should be colon : after key and comma at the end of the line. After you done editing the file, press commit changes and add a description following commit naming stadart, it is one section earlier than this text. Create a pull request to request adding your work to the project.  
+## Giving feedback
+If you used the extension and thought of anything that can be improved or change, please head to the Issues section on GitHub and add a new issue.
+## Improving the code
+If you have any ideas and want to make them into existing yourself, you are very welcome!
