@@ -1,10 +1,10 @@
 // Add Google Gemini
 async function callGemini(prompt) {
-  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=YOUR_API_KEY", {
+  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyAmEtbLtZSomGNceRT-S6AulnDpvMydoSI", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
-    },
+  },
     body: JSON.stringify({
       contents: [
         {
@@ -79,7 +79,7 @@ async function showAnswer(selectedText) {
     }
 
     if (!found) {
-      geminiAnswer = "Gemini: " + await callGemini("Answer the following question using google search, give the shortest answer possible. If asked to provide a date, provide the one you're most certain of. If there seem to be provided answer options after the question, select the answer from them. Here is the question: " + selectedText);
+      geminiAnswer = "Gemini: " + await callGemini("Answer the following question, give the shortest answer possible. If asked to provide a date, provide the one you're most certain of. If there seem to be provided answer options after the question, select the answer from them. Do not use any formating, answer in plain text. Here is the question: " + selectedText);
       popup.innerText = geminiAnswer;
     }
   } catch (error) {
