@@ -1,6 +1,6 @@
 // Add Google Gemini
 async function callGemini(prompt) {
-  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyAmEtbLtZSomGNceRT-S6AulnDpvMydoSI", {
+  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=YOUR_API_KEY", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
