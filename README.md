@@ -2,7 +2,7 @@
 
 A simple Chrome extension that provides answers for selected questions.
 
-## Original Creator:
+## Credits:
 ```
 https://github.com/zenoNong
 ```
