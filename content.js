@@ -21,6 +21,83 @@ async function callGemini(prompt) {
   return result;
 }
 
+let popupButton = null; // To keep a reference to your popupButton
+
+// Function to create and show the popupButton
+function showSelectionPopupButton(selectedText, x, y) {
+  // Remove existing popupButton if any
+  if (popupButton) {
+    popupButton.remove();
+  }
+
+  // Create the popupButton element
+  popupButton = document.createElement('div');
+  popupButton.id = 'my-selection-popupButton'; // For styling
+  icon16 = chrome.runtime.getURL("icons/icon16.png");
+  console.log(icon16)
+  popupButton.innerHTML = `
+    <button id="popupButton-action-button"><img src="${icon16}" alt="icon not found"></button>
+  `; // Keep it simple
+
+  // Basic styling 
+  popupButton.style.position = 'absolute';
+  popupButton.style.left = `${x}px`;
+  popupButton.style.top = `${y}px`; // Position slightly below the selection
+
+  document.body.appendChild(popupButton);
+
+  // Add event listener for the button inside the popupButton
+  const actionButton = document.getElementById('popupButton-action-button');
+  if (actionButton) {
+    actionButton.addEventListener('click', () => {
+      showAnswer(selectedText) 
+      hideSelectionPopupButton();
+    });
+  }
+}
+
+function hideSelectionPopupButton() {
+  if (popupButton) {
+    popupButton.remove();
+    popupButton = null;
+  }
+}
+
+// Listen for mouseup event
+document.addEventListener('mouseup', function(event) {
+  // Don't show popupButton if the click was inside our own popupButton
+  if (popupButton && popupButton.contains(event.target)) {
+    return;
+  }
+
+  const selectedText = window.getSelection().toString().trim();
+
+  if (selectedText) {
+    const selection = window.getSelection();
+    if (selection.rangeCount === 0) return; // No selection range
+
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+
+    // Show popupButton near the selection
+    // rect.left is relative to viewport, window.scrollX for absolute page position
+    showSelectionPopupButton(selectedText, rect.left + window.scrollX, rect.bottom + window.scrollY);
+  } else {
+    // If no text is selected, hide the popupButton (e.g., user clicked away)
+    hideSelectionPopupButton();
+  }
+});
+
+// Optional: Listen for clicks elsewhere on the page to dismiss the popupButton
+document.addEventListener('mousedown', function(event) {
+  // If a popupButton exists and the click is outside of it
+  if (popupButton && !popupButton.contains(event.target)) {
+    const selectedText = window.getSelection().toString().trim();
+    if (!selectedText) { // Only hide if there's no active selection
+        hideSelectionPopupButton();
+    }
+  }
+});
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "answer" && request.text) {
@@ -53,11 +130,11 @@ async function showAnswer(selectedText) {
   popup.style.position = "absolute";
   popup.style.backgroundColor = isDarkMode ? "#222" : "white";
   popup.style.color = isDarkMode ? "white" : "black";
+  popup.style.borderColor = isDarkMode ? "black": "#ddd";
   popup.style.border = "1px solid";
-  popup.style.borderColor = isDarkMode ? "black": "#ddd"
-  popup.style.padding = "10px";
-  popup.style.zIndex = 1000;
   popup.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.1)";
+  popup.style.padding = "5px";
+  popup.style.borderRadius = "3px";
 
   let answers = {};
   try {
