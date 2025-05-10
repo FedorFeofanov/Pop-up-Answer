@@ -17,3 +17,13 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     });
   }
 });
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "getGeminiApiKey") {
+    chrome.storage.sync.get('geminiApiKey', (data) => {
+      const apiKey = data.geminiApiKey || null;
+      sendResponse({ geminiApiKey: apiKey });
+    });
+    return true;
+  }
+});
