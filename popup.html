@@ -1,12 +1,62 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <link rel="stylesheet" href="popup.css">
+  <title>Extension Settings</title>
+  <style>
+    /* Basic styling for your popup - you can customize this */
+    body {
+      font-family: sans-serif;
+      width: 300px; /* Fixed width for the popup */
+      padding: 15px;
+      background-color: #f4f4f4;
+    }
+    h2 {
+      margin-top: 0;
+      color: #333;
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #555;
+    }
+    input[type="text"] {
+      width: calc(100% - 22px); /* Full width accounting for padding/border */
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box; /* Include padding/border in width calculation */
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #status-message {
+      margin-top: 10px;
+      font-size: 0.9em;
+      text-align: center;
+      color: green;
+    }
+  </style>
 </head>
 <body>
-  <div id="answer-container">
-    <p id="answer-text">Select a question to see the answer for it.</p>
-  </div>
-  <script src="content.js"></script>
-</body>
+  <h2>Gemini API Key</h2>
+  <label for="api-key-input">Enter your API Key:</label>
+  <input type="text" id="api-key-input" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+  <button id="save-button">Save Key</button>
+  <div id="status-message"></div>
+
+  <script src="popup.js"></script> </body>
 </html>

@@ -1,6 +1,9 @@
 // Add Google Gemini
 async function callGemini(prompt) {
-  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=YOUR_API_KEY", {
+  const responseFromBg = await chrome.runtime.sendMessage({ action: "getGeminiApiKey" });
+  const apiKey = responseFromBg.geminiApiKey;
+  if (!apiKey) return "Error: Gemini API Key not set. Please configure it in the extension settings.";
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -21,7 +24,8 @@ async function callGemini(prompt) {
   return result;
 }
 
-let popupButton = null; // To keep a reference to your popupButton
+let popupButton = null; // To keep a reference to popupButton
+let popup = null;
 
 // Function to create and show the popupButton
 function showSelectionPopupButton(selectedText, x, y) {
@@ -34,7 +38,6 @@ function showSelectionPopupButton(selectedText, x, y) {
   popupButton = document.createElement('div');
   popupButton.id = 'my-selection-popupButton'; // For styling
   icon16 = chrome.runtime.getURL("icons/icon16.png");
-  console.log(icon16)
   popupButton.innerHTML = `
     <button id="popupButton-action-button"><img src="${icon16}" alt="icon not found"></button>
   `; // Keep it simple
@@ -66,7 +69,7 @@ function hideSelectionPopupButton() {
 // Listen for mouseup event
 document.addEventListener('mouseup', function(event) {
   // Don't show popupButton if the click was inside our own popupButton
-  if (popupButton && popupButton.contains(event.target)) {
+  if (popupButton && popupButton.contains(event.target) || popup && popup.contains(event.target)) {
     return;
   }
 
@@ -125,7 +128,7 @@ const isVisible = elem => !!elem && !!( elem.offsetWidth || elem.offsetHeight ||
 async function showAnswer(selectedText) {
   // Create the popup element
   const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const popup = document.createElement("div");
+  popup = document.createElement("div");
   popup.id = "answer-popup";
   popup.style.position = "absolute";
   popup.style.backgroundColor = isDarkMode ? "#222" : "white";
