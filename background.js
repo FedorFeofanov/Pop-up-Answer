@@ -1,3 +1,6 @@
+// background.js - Handles extension initialization and message passing
+
+// Set up context menu item when extension is installed
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "answer",
@@ -6,24 +9,39 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
+// Handle context menu click
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "answer" && info.selectionText) {
-    // Send a message to the content script with the selected text
+    // Inject content script and send the selected text
     chrome.scripting.executeScript({
       target: { tabId: tab.id },
       files: ['content.js']
     }, () => {
-      chrome.tabs.sendMessage(tab.id, { action: "answer", text: info.selectionText });
+      chrome.tabs.sendMessage(tab.id, { 
+        action: "answer", 
+        text: info.selectionText 
+      });
     });
   }
 });
 
+// Handle request for user configuration
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "getGeminiApiKey") {
-    chrome.storage.sync.get('geminiApiKey', (data) => {
-      const apiKey = data.geminiApiKey || null;
-      sendResponse({ geminiApiKey: apiKey });
+  if (request.action === "getConfiguration") {
+    // Get user settings from storage with defaults
+    chrome.storage.sync.get({
+      'geminiApiKey': '',
+      'checkButton': true,
+      'checkMark': true,
+      'theme': 'auto'
+    }, (data) => {
+      sendResponse({
+        geminiApiKey: data.geminiApiKey,
+        checkButton: data.checkButton,
+        checkMark: data.checkMark,
+        theme: data.theme
+      });
     });
-    return true;
+    return true; // Required to use sendResponse asynchronously
   }
 });

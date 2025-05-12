@@ -1,32 +1,92 @@
+// popup.js - Handles the extension popup UI
+
 document.addEventListener('DOMContentLoaded', () => {
+  // Cache DOM elements
   const apiKeyInput = document.getElementById('api-key-input');
+  const checkButtonInput = document.getElementById('check-button-input');
+  const checkMarkInput = document.getElementById('check-gemini-mark-input');
+  const themeSelect = document.getElementById('theme-select');
   const saveButton = document.getElementById('save-button');
   const statusMessage = document.getElementById('status-message');
-
-  // Load saved API key when the popup opens
-  // 'geminiApiKey' is the key we'll use in storage
-  chrome.storage.sync.get('geminiApiKey', (data) => {
-    if (data.geminiApiKey) {
-      apiKeyInput.value = data.geminiApiKey; // Populate the input field
-    }
+  
+  // Load saved settings
+  loadSettings();
+  
+  // Apply theme on load
+  applyTheme();
+  
+  // Set up event listeners
+  saveButton.addEventListener('click', saveSettings);
+  themeSelect.addEventListener('change', () => {
+    applyTheme(themeSelect.value);
   });
-
-  // Save API key when the button is clicked
-  saveButton.addEventListener('click', () => {
-    const apiKey = apiKeyInput.value.trim(); // Get the trimmed value from the input
-
+  
+  // Load saved settings from storage
+  function loadSettings() {
+    chrome.storage.sync.get({
+      'geminiApiKey': '',
+      'checkButton': true,
+      'checkMark': true,
+      'theme': 'auto'
+    }, (data) => {
+      // Populate input fields with saved values
+      apiKeyInput.value = data.geminiApiKey;
+      checkButtonInput.checked = data.checkButton;
+      checkMarkInput.checked = data.checkMark;
+      themeSelect.value = data.theme;
+      
+      // Apply saved theme
+      applyTheme(data.theme);
+    });
+  }
+  
+  // Save settings to storage
+  function saveSettings() {
+    const apiKey = apiKeyInput.value.trim();
+    const checkButton = checkButtonInput.checked;
+    const checkMark = checkMarkInput.checked;
+    const theme = themeSelect.value;
+    
     if (apiKey) {
-      // Save the key using chrome.storage.sync (synced across user's Chrome profiles)
-      chrome.storage.sync.set({ 'geminiApiKey': apiKey }, () => {
-        statusMessage.textContent = 'API Key saved successfully!';
-        statusMessage.style.color = 'green';
-        setTimeout(() => {
-          statusMessage.textContent = ''; // Clear the message after 2 seconds
-        }, 2000);
+      // Save settings
+      chrome.storage.sync.set({
+        'geminiApiKey': apiKey, 
+        'checkButton': checkButton,
+        'checkMark': checkMark,
+        'theme': theme
+      }, () => {
+        // Show success message
+        showStatus('Settings saved successfully!', 'success');
       });
     } else {
-      statusMessage.textContent = 'Please enter an API Key.';
-      statusMessage.style.color = 'red';
+      // Show error for missing API key
+      showStatus('API Key is required', 'error');
     }
-  });
+  }
+  
+  // Show status message
+  function showStatus(message, type) {
+    statusMessage.textContent = message;
+    statusMessage.className = type; // 'success' or 'error'
+    
+    // Clear message after delay
+    setTimeout(() => {
+      statusMessage.className = '';
+    }, 3000);
+  }
+  
+  // Apply theme to popup
+  function applyTheme(theme = null) {
+    // Use provided theme or get from select
+    const currentTheme = theme || themeSelect.value;
+    
+    if (currentTheme === 'auto') {
+      // Check system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.body.className = prefersDark ? 'dark' : 'light';
+    } else {
+      // Apply selected theme
+      document.body.className = currentTheme;
+    }
+  }
 });
