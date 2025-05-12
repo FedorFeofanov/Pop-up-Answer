@@ -1,0 +1,69 @@
+/* styles.css - Main stylesheet for extension UI elements */
+
+/* Answer popup styling */
+#answer-popup {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 300px;
+  z-index: 10000;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 12px 16px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Selection button styling */
+#my-selection-popupButton {
+  padding: 4px;
+  border-radius: 4px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.12);
+  z-index: 9999;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+/* Light theme for selection button */
+#my-selection-popupButton.light {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+}
+
+/* Dark theme for selection button */
+#my-selection-popupButton.dark {
+  background-color: #333333;
+  border: 1px solid #555555;
+}
+
+/* Button inside selection popup */
+#my-selection-popupButton button {
+  background-color: #0d6efd;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+#my-selection-popupButton button:hover {
+  background-color: #0b5ed7;
+}
+
+/* Button icon styling */
+#my-selection-popupButton button img {
+  width: 16px;
+  height: 16px;
+}
+
+/* Animation for popup appearance */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#answer-popup {
+  animation: fadeIn 0.2s ease-out;
+}

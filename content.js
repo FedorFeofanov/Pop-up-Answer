@@ -1,182 +1,296 @@
-// Add Google Gemini
-async function callGemini(prompt) {
-  const responseFromBg = await chrome.runtime.sendMessage({ action: "getGeminiApiKey" });
-  const apiKey = responseFromBg.geminiApiKey;
-  if (!apiKey) return "Error: Gemini API Key not set. Please configure it in the extension settings.";
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-  },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            { text: prompt }
-          ]
-        }
-      ]
-    })
+// content.js - Handles content script functionality
+
+// Global variables
+let apiKey = '';
+let checkedButton = true;
+let checkedMark = true;
+let themeMode = 'auto';
+let popupButton = null;
+let answerPopup = null;
+
+// Initialize extension
+function initializeExtension() {
+  // Get user configuration before setting up functionality
+  chrome.runtime.sendMessage({ action: "getConfiguration" }, (response) => {
+    if (response) {
+      apiKey = response.geminiApiKey;
+      checkedButton = response.checkButton;
+      checkedMark = response.checkMark;
+      themeMode = response.theme || 'auto';
+      
+      // Set up event listeners after configuration is loaded
+      setupEventListeners();
+    } else {
+      console.error("Failed to load configuration");
+    }
   });
-  if (!response.ok) return "Error with API";
-  const data = await response.json();
-  const result = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  return result;
 }
 
-let popupButton = null; // To keep a reference to popupButton
-let popup = null;
+// Set up all event listeners
+function setupEventListeners() {
+  // Text selection event handler
+  document.addEventListener('mouseup', handleTextSelection);
+  
+  // Click outside handler
+  document.addEventListener('mousedown', handleClickOutside);
+  
+  // Listen for messages from background script
+  chrome.runtime.onMessage.addListener(handleBackgroundMessages);
+}
 
-// Function to create and show the popupButton
-function showSelectionPopupButton(selectedText, x, y) {
-  // Remove existing popupButton if any
-  if (popupButton) {
-    popupButton.remove();
+// Handle text selection
+function handleTextSelection(event) {
+  // Ignore if click was inside our UI elements
+  if ((popupButton && popupButton.contains(event.target)) || 
+      (answerPopup && answerPopup.contains(event.target))) {
+    return;
   }
 
-  // Create the popupButton element
-  popupButton = document.createElement('div');
-  popupButton.id = 'my-selection-popupButton'; // For styling
-  icon16 = chrome.runtime.getURL("icons/icon16.png");
-  popupButton.innerHTML = `
-    <button id="popupButton-action-button"><img src="${icon16}" alt="icon not found"></button>
-  `; // Keep it simple
+  const selectedText = window.getSelection().toString().trim();
 
-  // Basic styling 
+  // Show popup button if text is selected and button is enabled
+  if (selectedText && checkedButton) {
+    const selection = window.getSelection();
+    if (selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+
+    // Show button near selection
+    showSelectionButton(
+      selectedText, 
+      rect.left + window.scrollX, 
+      rect.bottom + window.scrollY
+    );
+  } else {
+    // Hide button if no text selected
+    hideSelectionButton();
+  }
+}
+
+// Handle clicks outside selection
+function handleClickOutside(event) {
+  if (popupButton && !popupButton.contains(event.target)) {
+    const selectedText = window.getSelection().toString().trim();
+    if (!selectedText) {
+      hideSelectionButton();
+    }
+  }
+}
+
+// Handle messages from background script
+function handleBackgroundMessages(request, sender, sendResponse) {
+  if (request.action === "answer" && request.text) {
+    showAnswer(request.text);
+  }
+}
+
+// Show button near text selection
+function showSelectionButton(selectedText, x, y) {
+  // Remove existing button if any
+  hideSelectionButton();
+
+  // Create button element
+  popupButton = document.createElement('div');
+  popupButton.id = 'my-selection-popupButton';
+  
+  // Get icon from extension
+  const icon16 = chrome.runtime.getURL("icons/icon16.png");
+  
+  // Create button content
+  popupButton.innerHTML = `
+    <button id="popupButton-action-button">
+      <img src="${icon16}" alt="Answer">
+    </button>
+  `;
+
+  // Position button
   popupButton.style.position = 'absolute';
   popupButton.style.left = `${x}px`;
-  popupButton.style.top = `${y}px`; // Position slightly below the selection
+  popupButton.style.top = `${y}px`;
 
+  // Add to page
   document.body.appendChild(popupButton);
 
-  // Add event listener for the button inside the popupButton
+  // Add click handler
   const actionButton = document.getElementById('popupButton-action-button');
   if (actionButton) {
     actionButton.addEventListener('click', () => {
-      showAnswer(selectedText) 
-      hideSelectionPopupButton();
+      showAnswer(selectedText);
+      hideSelectionButton();
     });
   }
 }
 
-function hideSelectionPopupButton() {
+// Hide selection button
+function hideSelectionButton() {
   if (popupButton) {
     popupButton.remove();
     popupButton = null;
   }
 }
 
-// Listen for mouseup event
-document.addEventListener('mouseup', function(event) {
-  // Don't show popupButton if the click was inside our own popupButton
-  if (popupButton && popupButton.contains(event.target) || popup && popup.contains(event.target)) {
-    return;
-  }
-
-  const selectedText = window.getSelection().toString().trim();
-
-  if (selectedText) {
-    const selection = window.getSelection();
-    if (selection.rangeCount === 0) return; // No selection range
-
-    const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-
-    // Show popupButton near the selection
-    // rect.left is relative to viewport, window.scrollX for absolute page position
-    showSelectionPopupButton(selectedText, rect.left + window.scrollX, rect.bottom + window.scrollY);
-  } else {
-    // If no text is selected, hide the popupButton (e.g., user clicked away)
-    hideSelectionPopupButton();
-  }
-});
-
-// Optional: Listen for clicks elsewhere on the page to dismiss the popupButton
-document.addEventListener('mousedown', function(event) {
-  // If a popupButton exists and the click is outside of it
-  if (popupButton && !popupButton.contains(event.target)) {
-    const selectedText = window.getSelection().toString().trim();
-    if (!selectedText) { // Only hide if there's no active selection
-        hideSelectionPopupButton();
-    }
-  }
-});
-// Listen for messages from the background script
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "answer" && request.text) {
-    showAnswer(request.text);
-  }
-});
-
-function hideOnClickOutside(popup) {
-    const outsideClickListener = event => {
-        if (!popup.contains(event.target) && isVisible(popup)) { 
-          popup.style.display = 'none';
-          removeClickListener();
-        }
-    }
-
-    const removeClickListener = () => {
-        document.removeEventListener('click', outsideClickListener);
-    }
-
-    document.addEventListener('click', outsideClickListener);
-}
-
-const isVisible = elem => !!elem && !!( elem.offsetWidth || elem.offsetHeight || elem.getClientRects().length );
-
+// Show answer popup
 async function showAnswer(selectedText) {
-  // Create the popup element
-  const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  popup = document.createElement("div");
-  popup.id = "answer-popup";
-  popup.style.position = "absolute";
-  popup.style.backgroundColor = isDarkMode ? "#222" : "white";
-  popup.style.color = isDarkMode ? "white" : "black";
-  popup.style.borderColor = isDarkMode ? "black": "#ddd";
-  popup.style.border = "1px solid";
-  popup.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.1)";
-  popup.style.padding = "5px";
-  popup.style.borderRadius = "3px";
+  // Create popup element
+  answerPopup = document.createElement("div");
+  answerPopup.id = "answer-popup";
+  
+  // Apply theme
+  applyThemeToPopup(answerPopup);
+  
+  // Set base styling
+  answerPopup.style.position = "absolute";
+  answerPopup.style.border = "1px solid";
+  answerPopup.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.1)";
+  answerPopup.style.padding = "10px";
+  answerPopup.style.borderRadius = "5px";
+  answerPopup.style.maxWidth = "300px";
+  answerPopup.style.zIndex = "10000";
 
-  let answers = {};
+  // Try to get answers from local storage
   try {
-      const url = chrome.runtime.getURL("answers.json");
-      const response = await fetch(url);
-      answers = await response.json();
-    } catch (error) {
-      console.error('Error loading answers:', error);
-    }
-    try {
+    // Try to get predefined answers
+    const answers = await loadAnswers();
     let found = false;
 
+    // Check for matches in predefined answers
     for (const [question, answer] of Object.entries(answers)) {
       if (question.toLowerCase().includes(selectedText.toLowerCase())) {
-        popup.innerText = answer;
+        answerPopup.innerText = answer;
         found = true;
         break;
       }
     }
 
+    // If no match found, query Gemini API
     if (!found) {
-      geminiAnswer = "Gemini: " + await callGemini("Answer the following question, give the shortest answer possible. If asked to provide a date, provide the one you're most certain of. If there seem to be provided answer options after the question, select the answer from them. Do not use any formating, answer in plain text. Here is the question: " + selectedText);
-      popup.innerText = geminiAnswer;
+      const geminiAnswer = await getGeminiAnswer(selectedText);
+      answerPopup.innerText = geminiAnswer;
     }
   } catch (error) {
-    popup.innerText = "Error searching for answer.";
+    answerPopup.innerText = "Error searching for answer: " + error.message;
   }
 
-  // Append the popup to the body
-  document.body.appendChild(popup);
+  // Add popup to page
+  document.body.appendChild(answerPopup);
 
-  // Position the popup near the selection
+  // Position popup near selection
+  positionPopup(answerPopup);
+
+  // Add click outside handler
+  setupPopupClickOutside(answerPopup);
+}
+
+// Position popup near selection
+function positionPopup(popup) {
   const selection = window.getSelection();
   if (selection.rangeCount > 0) {
     const range = selection.getRangeAt(0);
     const rect = range.getBoundingClientRect();
+    
     popup.style.top = `${rect.bottom + window.scrollY}px`;
     popup.style.left = `${rect.left + window.scrollX}px`;
   }
-
-  hideOnClickOutside(popup);
 }
+
+// Setup click outside handler for popup
+function setupPopupClickOutside(popup) {
+  const outsideClickListener = event => {
+    if (!popup.contains(event.target) && isVisible(popup)) { 
+      popup.style.display = 'none';
+      document.removeEventListener('click', outsideClickListener);
+    }
+  };
+
+  document.addEventListener('click', outsideClickListener);
+}
+
+// Load answers from JSON file
+async function loadAnswers() {
+  try {
+    const url = chrome.runtime.getURL("answers.json");
+    const response = await fetch(url);
+    return await response.json();
+  } catch (error) {
+    console.error('Error loading answers:', error);
+    return {};
+  }
+}
+
+// Get answer from Gemini API
+async function getGeminiAnswer(query) {
+  if (!apiKey) {
+    return "Error: Gemini API Key not set. Please configure it in the extension settings.";
+  }
+  
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, 
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { 
+                  text: `Answer the following question, give the shortest answer possible. 
+                         If asked to provide a date, provide the one you're most certain of. 
+                         If there seem to be provided answer options after the question, 
+                         select the answer from them. Do not use any formatting, 
+                         answer in plain text. Here is the question: ${query}`
+                }
+              ]
+            }
+          ]
+        })
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    const result = data?.candidates?.[0]?.content?.parts?.[0]?.text || "No answer found";
+    if (checkedMark){return "Gemini: " + result;}
+    return result;
+  } catch (error) {
+    console.error("Gemini API error:", error);
+    return "Error with Gemini API: " + error.message;
+  }
+}
+
+// Apply theme to popup
+function applyThemeToPopup(popup) {
+  let isDark = false;
+  
+  // Determine if dark mode based on user preference or system
+  if (themeMode === 'auto') {
+    isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  } else {
+    isDark = themeMode === 'dark';
+  }
+  
+  // Apply appropriate theme
+  if (isDark) {
+    popup.style.backgroundColor = "#222";
+    popup.style.color = "#eee";
+    popup.style.borderColor = "#444";
+  } else {
+    popup.style.backgroundColor = "#fff";
+    popup.style.color = "#222";
+    popup.style.borderColor = "#ddd";
+  }
+}
+
+// Check if element is visible
+function isVisible(element) {
+  return !!(element && (element.offsetWidth || element.offsetHeight || element.getClientRects().length));
+}
+
+// Initialize extension
+initializeExtension();
