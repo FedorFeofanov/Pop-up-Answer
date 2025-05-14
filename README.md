@@ -74,10 +74,9 @@ popup.html & popup.css
 2. Script Injection and Messaging: When "Answer" is selected, the background script injects the content script into the current tab.
 3. Answer Retrieval: The content script fetches the answer for the selected question using a JSON file that the user can edit.
 4. Popup Display: The fetched answer is displayed in a styled popup near the text selection.
-# Commit naming rules
+# Adding answers rules
 ## Psihologija
-[year][theme number][lesson number]
-For example it commit may contain 2.10.3 Psihologija, that means that the material is from the second grade, theme number is 10 (for example Licnost), the lesson number is 3 (for example 3. Bihevioristicke, humanisticke i socijalno-kognitivne teorije licnosti)
+"Answers": "[year][theme]"
 
 # How can you contribute?
 ## Adding answers
