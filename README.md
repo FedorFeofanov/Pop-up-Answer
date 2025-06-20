@@ -37,17 +37,24 @@ This Chrome extension allows users to quickly get answres for questions they sel
 - Open Chrome and go to chrome://extensions/.
 - Enable Developer mode (toggle switch in the top right).
 - Click Load unpacked and select the directory of the extension.
+
+3. API key
+- To get yourself an API key that is going to be used, go to https://aistudio.google.com/apikey
+- Select Create API key
+- Search for Gemini and press Create API key
+- Copy the key over to the extension window and press save
     
 ## Usage
 
 1. After installing, navigate to any webpage.
-2. Select any word or phrase that is part of question by highlighting it with your mouse.
-3. Right-click and choose Answer from the context menu.
+2. Select the question by highlighting it with your mouse.
+3. Press the button that appeared on the screen or right-click and choose Answer from the context menu.
 4. A floating popup will display the answer near your selected text.
 
 
 ## File and Structure
 
+- answers.json: Contains questions and answers that are predefined by users. 
 - manifest.json: Configuration file for the extension.
 - background.js: Handles context menu creation and messaging.
 - content.js: Fetches and displays answers when text is selected.
@@ -55,32 +62,14 @@ This Chrome extension allows users to quickly get answres for questions they sel
 - popup.css: Styles for the floating popup.
 
 
-## Description
-
-manifest.json
-
-- The main configuration file for Chrome extensions, specifying permissions, scripts, and actions.
-
-background.js
-- Handles background processes such as creating context menus and communicating with content scripts.
-
-content.js
-- Injected into web pages, listens for messages from the background script, and performs the core function of fetching and displaying answers.
-
-popup.html & popup.css
-- Provide the basic interface and styling for any popups or UIs used by the extension.
-## How it works
-1. Context Menu Creation: The extension creates a right-click context menu option, "Answer", when it is installed or updated.
-2. Script Injection and Messaging: When "Answer" is selected, the background script injects the content script into the current tab.
-3. Answer Retrieval: The content script fetches the answer for the selected question using a JSON file that the user can edit.
-4. Popup Display: The fetched answer is displayed in a styled popup near the text selection.
 # Adding answers rules
+If you want to share answers added to the answers.json, which is highly appreciated by the community, you should follow the naming rules, so that they could be found later on 
 ## Psihologija
 "Answers": "[year][theme]"
 
 # How can you contribute?
 ## Adding answers
-The easiest way of adding answers is by opeining answers.json file, clicking *Edit this file* and adding questions with answers following the standart, both of them should be inside of double quotes "", there should be colon : after key and comma at the end of the line. After you done editing the file, press commit changes and add a description following commit naming stadart, it is one section earlier than this text. Create a pull request to request adding your work to the project.  
+The easiest way of adding answers is by opeining answers.json file right on github, clicking *Edit this file* and adding questions with answers following the standart, both of them should be inside of double quotes "", there should be colon : after key and comma , at the end of the line. After you done editing the file, press commit changes and add a short description. Create a pull request to request adding your work to the project.  
 ## Giving feedback
 If you used the extension and thought of anything that can be improved or change, please head to the Issues section on GitHub and add a new issue.
 ## Improving the code
