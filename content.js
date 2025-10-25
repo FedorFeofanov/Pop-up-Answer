@@ -8,6 +8,10 @@ let themeMode = 'auto';
 let popupButton = null;
 let answerPopup = null;
 
+let ParentElement;
+let selectedTextX = 0;
+let selectedTextY = 0;
+
 // Initialize extension
 function initializeExtension() {
   // Get user configuration before setting up functionality
@@ -56,12 +60,11 @@ function handleTextSelection(event) {
     const range = selection.getRangeAt(0);
     const rect = range.getBoundingClientRect();
 
+    selectedTextX = rect.left + window.scrollX;
+    selectedTextY = rect.bottom + window.scrollY;
+
     // Show button near selection
-    showSelectionButton(
-      selectedText, 
-      rect.left + window.scrollX, 
-      rect.bottom + window.scrollY
-    );
+    showSelectionButton(selectedText);
   } else {
     // Hide button if no text selected
     hideSelectionButton();
@@ -84,13 +87,13 @@ function handleBackgroundMessages(request, sender, sendResponse) {
     showAnswer(request.text);
   }
 }
-
+//
 // Show button near text selection
-function showSelectionButton(selectedText, x, y) {
+function showSelectionButton(selectedText) {
   // Remove existing button if any
   hideSelectionButton();
 
-  // Create button element
+// Show button near text selection
   popupButton = document.createElement('div');
   popupButton.id = 'my-selection-popupButton';
   
@@ -106,11 +109,21 @@ function showSelectionButton(selectedText, x, y) {
 
   // Position button
   popupButton.style.position = 'absolute';
-  popupButton.style.left = `${x}px`;
-  popupButton.style.top = `${y}px`;
+  popupButton.style.left = `${selectedTextX}px`;
+  popupButton.style.top = `${selectedTextY}px`;
+  popupButton.style.zIndex = `10000000000000000000000000`;
 
   // Add to page
-  document.body.appendChild(popupButton);
+  ParentElement = document.getElementById("form-main-content1");
+  if(ParentElement){
+    ParentElement.style.position = "relative";
+    console.log("Success: " + ParentElement);
+  }
+  else{
+    ParentElement = document.body;
+    console.log("not so much of success: " + ParentElement);
+  }
+  ParentElement.appendChild(popupButton);
 
   // Add click handler
   const actionButton = document.getElementById('popupButton-action-button');
@@ -140,13 +153,15 @@ async function showAnswer(selectedText) {
   applyThemeToPopup(answerPopup);
   
   // Set base styling
+  answerPopup.style.left = `${selectedTextX}px`;
+  answerPopup.style.top = `${selectedTextY}px`;
   answerPopup.style.position = "absolute";
   answerPopup.style.border = "1px solid";
   answerPopup.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.1)";
   answerPopup.style.padding = "10px";
   answerPopup.style.borderRadius = "5px";
   answerPopup.style.maxWidth = "300px";
-  answerPopup.style.zIndex = "10000";
+  answerPopup.style.zIndex = "100000000000000000000000000";
 
   // Try to get answers from local storage
   try {
@@ -173,16 +188,18 @@ async function showAnswer(selectedText) {
   }
 
   // Add popup to page
-  document.body.appendChild(answerPopup);
+  console.log("to add answer " + ParentElement);
+  ParentElement.appendChild(answerPopup);
 
   // Position popup near selection
-  positionPopup(answerPopup);
+  //positionPopup(answerPopup);
 
   // Add click outside handler
   setupPopupClickOutside(answerPopup);
 }
 
 // Position popup near selection
+/*
 function positionPopup(popup) {
   const selection = window.getSelection();
   if (selection.rangeCount > 0) {
@@ -193,6 +210,7 @@ function positionPopup(popup) {
     popup.style.left = `${rect.left + window.scrollX}px`;
   }
 }
+*/
 
 // Setup click outside handler for popup
 function setupPopupClickOutside(popup) {
