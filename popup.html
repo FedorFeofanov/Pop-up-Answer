@@ -31,8 +31,13 @@
     }
     
     h2 {
-      margin-top: 0;
-      margin-bottom: 16px;
+      text-align: center;
+      font-weight: 600;
+      padding: 0;
+      margin: 0;
+    }
+    h3 {
+      margin: 0;
       text-align: center;
       font-weight: 600;
     }
@@ -165,6 +170,7 @@
 <body>
   <div class="container">
     <h2>Extension Settings</h2>
+    <h3>Requires page reload</h3>
     
     <div class="setting-group">
       <label>Gemini Settings:</label>
@@ -173,6 +179,10 @@
       <div class="checkbox-container">
         <input type="checkbox" id="check-gemini-mark-input" checked>
         <label for="check-gemini-mark-input">Add Gemini mark to AI generated answers</label>
+      </div>
+      <div class="checkbox-container">
+        <input type="checkbox" id="check-gemini-25">
+        <label for="check-gemini-25">Use Gemini 2.5 flash instead of 2.0 flash (might be slower)</label>
       </div>
     </div>
     
