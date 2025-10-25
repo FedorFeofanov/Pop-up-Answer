@@ -354,7 +354,7 @@ async function getGeminiAnswer(query) {
     const data = await response.json();
     const result = data?.candidates?.[0]?.content?.parts?.[0]?.text || "No answer found";
     if (checkedMark) {
-      return model + "Gemini: " + result;
+      return "Gemini: " + result;
     }
     return result;
   } catch (error) {
