@@ -2,6 +2,7 @@
 
 // Global variables
 let apiKey = '';
+let gemini25 = false;
 let checkedButton = true;
 let checkedMark = true;
 let themeMode = 'auto';
@@ -17,6 +18,7 @@ function initializeExtension() {
   chrome.runtime.sendMessage({ action: "getConfiguration" }, (response) => {
     if (response) {
       apiKey = response.geminiApiKey;
+      gemini25 = response.gemini25;
       checkedButton = response.checkButton;
       checkedMark = response.checkMark;
       themeMode = response.theme || 'auto';
@@ -316,10 +318,12 @@ async function getGeminiAnswer(query) {
   if (!apiKey) {
     return "Error: Gemini API Key not set. Please configure it in the extension settings.";
   }
-  
+  let model = "";
+  if(gemini25) model = "gemini-2.5-flash"
+  else model = "gemini-2.0-flash"
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, 
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, 
       {
         method: "POST",
         headers: {
@@ -350,7 +354,7 @@ async function getGeminiAnswer(query) {
     const data = await response.json();
     const result = data?.candidates?.[0]?.content?.parts?.[0]?.text || "No answer found";
     if (checkedMark) {
-      return "Gemini: " + result;
+      return model + "Gemini: " + result;
     }
     return result;
   } catch (error) {

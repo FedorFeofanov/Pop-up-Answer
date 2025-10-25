@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const apiKeyInput = document.getElementById('api-key-input');
   const checkButtonInput = document.getElementById('check-button-input');
   const checkMarkInput = document.getElementById('check-gemini-mark-input');
+  const versionInput = document.getElementById('check-gemini-25');
   const themeSelect = document.getElementById('theme-select');
   const saveButton = document.getElementById('save-button');
   const statusMessage = document.getElementById('status-message');
@@ -27,12 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
       'geminiApiKey': '',
       'checkButton': true,
       'checkMark': true,
+      'gemini25': false,
       'theme': 'auto'
     }, (data) => {
       // Populate input fields with saved values
       apiKeyInput.value = data.geminiApiKey;
       checkButtonInput.checked = data.checkButton;
       checkMarkInput.checked = data.checkMark;
+      versionInput.checked = data.gemini25;
       themeSelect.value = data.theme;
       
       // Apply saved theme
@@ -45,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const apiKey = apiKeyInput.value.trim();
     const checkButton = checkButtonInput.checked;
     const checkMark = checkMarkInput.checked;
+    const gemini25 = versionInput.checked;
     const theme = themeSelect.value;
     
     if (apiKey) {
@@ -53,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'geminiApiKey': apiKey, 
         'checkButton': checkButton,
         'checkMark': checkMark,
+        'gemini25': gemini25,
         'theme': theme
       }, () => {
         // Show success message

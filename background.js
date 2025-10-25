@@ -33,12 +33,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       'geminiApiKey': '',
       'checkButton': true,
       'checkMark': true,
+      'gemini25': false,
       'theme': 'auto'
     }, (data) => {
       sendResponse({
         geminiApiKey: data.geminiApiKey,
         checkButton: data.checkButton,
         checkMark: data.checkMark,
+        gemini25: data.gemini25,
         theme: data.theme
       });
     });
