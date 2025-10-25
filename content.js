@@ -1,4 +1,4 @@
-// content.js - Handles content script functionality
+// content.js - Handles content script functionality with iframe support
 
 // Global variables
 let apiKey = '';
@@ -7,6 +7,9 @@ let checkedMark = true;
 let themeMode = 'auto';
 let popupButton = null;
 let answerPopup = null;
+
+let selectedTextX = 0;
+let selectedTextY = 0;
 
 // Initialize extension
 function initializeExtension() {
@@ -54,14 +57,26 @@ function handleTextSelection(event) {
     if (selection.rangeCount === 0) return;
 
     const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
+    
+    // Get the position at the end of the selection for better placement
+    const rects = range.getClientRects();
+    let rect;
+    
+    if (rects.length > 0) {
+      // Use the last rectangle (end of selection) for multi-line selections
+      rect = rects[rects.length - 1];
+    } else {
+      // Fallback to bounding rect
+      rect = range.getBoundingClientRect();
+    }
+
+    // Store coordinates - we'll adjust them in showSelectionButton based on parent
+    // Position at the end of the last line
+    selectedTextX = rect.right;
+    selectedTextY = rect.bottom;
 
     // Show button near selection
-    showSelectionButton(
-      selectedText, 
-      rect.left + window.scrollX, 
-      rect.bottom + window.scrollY
-    );
+    showSelectionButton(selectedText);
   } else {
     // Hide button if no text selected
     hideSelectionButton();
@@ -85,12 +100,47 @@ function handleBackgroundMessages(request, sender, sendResponse) {
   }
 }
 
+// Get the best parent element for injection
+function getParentElement() {
+  // Try to find form-specific container first
+  let parent = document.getElementById("form-main-content1");
+  
+  if (parent) {
+    // Make sure it's positioned
+    if (getComputedStyle(parent).position === 'static') {
+      parent.style.position = 'relative';
+    }
+    return parent;
+  }
+  
+  // Try other common form containers
+  const selectors = [
+    '[role="main"]',
+    '.main-content',
+    '#main-content',
+    'main',
+    '[data-form-content]'
+  ];
+  
+  for (const selector of selectors) {
+    parent = document.querySelector(selector);
+    if (parent) {
+      if (getComputedStyle(parent).position === 'static') {
+        parent.style.position = 'relative';
+      }
+      return parent;
+    }
+  }
+  
+  // Fallback to body, but use fixed positioning
+  return document.body;
+}
+
 // Show button near text selection
-function showSelectionButton(selectedText, x, y) {
+function showSelectionButton(selectedText) {
   // Remove existing button if any
   hideSelectionButton();
 
-  // Create button element
   popupButton = document.createElement('div');
   popupButton.id = 'my-selection-popupButton';
   
@@ -99,18 +149,46 @@ function showSelectionButton(selectedText, x, y) {
   
   // Create button content
   popupButton.innerHTML = `
-    <button id="popupButton-action-button">
-      <img src="${icon16}" alt="Answer">
+    <button id="popupButton-action-button" style="
+      border: none;
+      background: white;
+      border-radius: 4px;
+      padding: 4px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    ">
+      <img src="${icon16}" alt="Answer" style="display: block;">
     </button>
   `;
 
-  // Position button
-  popupButton.style.position = 'absolute';
-  popupButton.style.left = `${x}px`;
-  popupButton.style.top = `${y}px`;
-
+  const parentEl = getParentElement();
+  const isBodyParent = parentEl === document.body;
+  
+  // Calculate correct position based on parent element
+  let finalX, finalY;
+  
+  if (isBodyParent) {
+    // Use fixed positioning with viewport coordinates
+    finalX = selectedTextX;
+    finalY = selectedTextY;
+    popupButton.style.position = 'fixed';
+  } else {
+    // Use absolute positioning relative to parent
+    const parentRect = parentEl.getBoundingClientRect();
+    finalX = selectedTextX - parentRect.left + parentEl.scrollLeft;
+    finalY = selectedTextY - parentRect.top + parentEl.scrollTop;
+    popupButton.style.position = 'absolute';
+  }
+  
+  popupButton.style.left = `${finalX}px`;
+  popupButton.style.top = `${finalY + 5}px`; // 5px below selection
+  popupButton.style.zIndex = '2147483647';
+  
   // Add to page
-  document.body.appendChild(popupButton);
+  parentEl.appendChild(popupButton);
 
   // Add click handler
   const actionButton = document.getElementById('popupButton-action-button');
@@ -139,14 +217,47 @@ async function showAnswer(selectedText) {
   // Apply theme
   applyThemeToPopup(answerPopup);
   
-  // Set base styling
-  answerPopup.style.position = "absolute";
+  const parentEl = getParentElement();
+  const isBodyParent = parentEl === document.body;
+  
+  // Calculate correct position based on parent element
+  let finalX, finalY;
+  
+  if (isBodyParent) {
+    // Use fixed positioning with viewport coordinates
+    finalX = selectedTextX;
+    finalY = selectedTextY + 5;
+    answerPopup.style.position = 'fixed';
+  } else {
+    // Use absolute positioning relative to parent
+    const parentRect = parentEl.getBoundingClientRect();
+    finalX = selectedTextX - parentRect.left + parentEl.scrollLeft;
+    finalY = selectedTextY - parentRect.top + parentEl.scrollTop + 5;
+    answerPopup.style.position = 'absolute';
+  }
+  
+  // Set styling
+  answerPopup.style.left = `${finalX}px`;
+  answerPopup.style.top = `${finalY}px`;
   answerPopup.style.border = "1px solid";
-  answerPopup.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.1)";
-  answerPopup.style.padding = "10px";
-  answerPopup.style.borderRadius = "5px";
-  answerPopup.style.maxWidth = "300px";
-  answerPopup.style.zIndex = "10000";
+  answerPopup.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
+  answerPopup.style.padding = "12px";
+  answerPopup.style.borderRadius = "8px";
+  answerPopup.style.maxWidth = "400px";
+  answerPopup.style.minWidth = "200px";
+  answerPopup.style.zIndex = "2147483647";
+  answerPopup.style.fontFamily = "system-ui, -apple-system, sans-serif";
+  answerPopup.style.fontSize = "14px";
+  answerPopup.style.lineHeight = "1.5";
+
+  // Show loading state
+  answerPopup.innerText = "Loading...";
+  
+  // Add popup to page
+  parentEl.appendChild(answerPopup);
+
+  // Add click outside handler IMMEDIATELY (before loading)
+  setupPopupClickOutside(answerPopup);
 
   // Try to get answers from local storage
   try {
@@ -171,27 +282,6 @@ async function showAnswer(selectedText) {
   } catch (error) {
     answerPopup.innerText = "Error searching for answer: " + error.message;
   }
-
-  // Add popup to page
-  document.body.appendChild(answerPopup);
-
-  // Position popup near selection
-  positionPopup(answerPopup);
-
-  // Add click outside handler
-  setupPopupClickOutside(answerPopup);
-}
-
-// Position popup near selection
-function positionPopup(popup) {
-  const selection = window.getSelection();
-  if (selection.rangeCount > 0) {
-    const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-    
-    popup.style.top = `${rect.bottom + window.scrollY}px`;
-    popup.style.left = `${rect.left + window.scrollX}px`;
-  }
 }
 
 // Setup click outside handler for popup
@@ -203,7 +293,10 @@ function setupPopupClickOutside(popup) {
     }
   };
 
-  document.addEventListener('click', outsideClickListener);
+  // Small delay to avoid immediate closing
+  setTimeout(() => {
+    document.addEventListener('click', outsideClickListener);
+  }, 100);
 }
 
 // Load answers from JSON file
@@ -256,7 +349,9 @@ async function getGeminiAnswer(query) {
     
     const data = await response.json();
     const result = data?.candidates?.[0]?.content?.parts?.[0]?.text || "No answer found";
-    if (checkedMark){return "Gemini: " + result;}
+    if (checkedMark) {
+      return "Gemini: " + result;
+    }
     return result;
   } catch (error) {
     console.error("Gemini API error:", error);
