@@ -299,7 +299,11 @@
       if (imageInfo) {
         contentsObj = {
           parts: [
-            { text: "Analyze this image and answer the question. If there is no question, describe what you see." },
+            { text: `Answer the question in the image. Keep your answer concise, without compromising the fullness of information.
+                       If asked to provide a date, provide the one you're most certain of. 
+                       If there seem to be provided answer options after the question, 
+                       select the answer from them. Do not use any formatting, 
+                       answer in plain text.` },
             {
               inline_data: {
                 mime_type: imageInfo.mimeType || "image/jpeg",
