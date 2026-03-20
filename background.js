@@ -5,45 +5,42 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "answer",
     title: "Answer",
-    contexts: ["selection"]
+    contexts: ["selection", "image"]
   });
 });
 
 // Handle context menu click
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === "answer" && info.selectionText) {
-    // Inject content script and send the selected text
-    chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      files: ['content.js']
-    }, () => {
-      chrome.tabs.sendMessage(tab.id, { 
-        action: "answer", 
-        text: info.selectionText 
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (info.menuItemId === "answer") {
+    if (info.mediaType === "image") {
+      try {
+        const response = await fetch(info.srcUrl);
+        const blob = await response.blob();
+        const base64 = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result.split(',')[1]);
+          reader.readAsDataURL(blob);
+        });
+
+        chrome.tabs.sendMessage(tab.id, {
+          action: "answer",
+          image: base64,
+          mimeType: blob.type
+        });
+      } catch (error) {
+        console.error("Error fetching image:", error);
+        chrome.tabs.sendMessage(tab.id, {
+          action: "answer",
+          error: "Failed to load image: " + error.message
+        });
+      }
+    } else if (info.selectionText) {
+      chrome.tabs.sendMessage(tab.id, {
+        action: "answer",
+        text: info.selectionText
       });
-    });
+    }
   }
 });
 
-// Handle request for user configuration
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "getConfiguration") {
-    // Get user settings from storage with defaults
-    chrome.storage.sync.get({
-      'geminiApiKey': '',
-      'checkButton': true,
-      'checkMark': true,
-      'gemini25': false,
-      'theme': 'auto'
-    }, (data) => {
-      sendResponse({
-        geminiApiKey: data.geminiApiKey,
-        checkButton: data.checkButton,
-        checkMark: data.checkMark,
-        gemini25: data.gemini25,
-        theme: data.theme
-      });
-    });
-    return true; // Required to use sendResponse asynchronously
-  }
-});
+
