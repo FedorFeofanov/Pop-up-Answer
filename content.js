@@ -100,6 +100,7 @@
     }
 
     handleBackgroundMessages(request, sender, sendResponse) {
+      if (window.self !== window.top) return;
       try {
         if (request.action === "answer") {
           if (request.error) {
@@ -292,7 +293,7 @@
         return "Please configure API Key in extension settings.";
       }
 
-      const modelName = this.config.gemini25 ? "gemini-2.5-flash" : "gemini-3-flash-preview";
+      const modelName = this.config.gemini25 ? "gemini-2.5-flash" : "gemini-3.1-flash-lite-preview";
 
       let contentsObj;
 
@@ -330,8 +331,7 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            contents: [contentsObj],
-            "generationConfig": {"thinkingConfig": {"thinkingLevel": "minimal"}}
+            contents: [contentsObj]
           })
         }
       );
