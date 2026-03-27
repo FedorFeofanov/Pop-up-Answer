@@ -8,6 +8,7 @@
     constructor() {
       this.config = {
         geminiApiKey: '',
+        promptContext: '',
         gemini25: false,
         checkButton: true,
         checkMark: true,
@@ -28,6 +29,7 @@
       return new Promise((resolve) => {
         chrome.storage.sync.get({
           'geminiApiKey': '',
+          'promptContext': '',
           'checkButton': true,
           'checkMark': true,
           'gemini25': false,
@@ -296,11 +298,12 @@
       const modelName = this.config.gemini25 ? "gemini-2.5-flash" : "gemini-3.1-flash-lite-preview";
 
       let contentsObj;
+      const contextPrefix = this.config.promptContext ? `Custom Context: ${this.config.promptContext}\n\n` : '';
 
       if (imageInfo) {
         contentsObj = {
           parts: [
-            { text: `Answer the question in the image. Keep your answer concise, without compromising the fullness of information.
+            { text: `${contextPrefix}Answer the question in the image. Keep your answer concise, without compromising the fullness of information.
                        If asked to provide a date, provide the one you're most certain of. 
                        If there seem to be provided answer options after the question, 
                        select the answer from them. Do not use any formatting, 
@@ -316,7 +319,7 @@
       } else {
         contentsObj = {
           parts: [{
-            text: `Answer the following question, give the shortest answer possible. 
+            text: `${contextPrefix}Answer the following question, give the shortest answer possible. 
                        If asked to provide a date, provide the one you're most certain of. 
                        If there seem to be provided answer options after the question, 
                        select the answer from them. Do not use any formatting, 

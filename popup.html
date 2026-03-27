@@ -55,7 +55,7 @@
     }
     
     /* Input styling */
-    input[type="text"] {
+    input[type="text"], textarea {
       width: 100%;
       padding: 10px;
       border-radius: 6px;
@@ -63,15 +63,17 @@
       box-sizing: border-box;
       font-size: 14px;
       transition: border-color 0.3s;
+      font-family: inherit;
+      resize: vertical;
     }
     
-    body.dark input[type="text"] {
+    body.dark input[type="text"], body.dark textarea {
       background-color: #343a40;
       border-color: #495057;
       color: #f8f9fa;
     }
     
-    input[type="text"]:focus {
+    input[type="text"]:focus, textarea:focus {
       outline: none;
       border-color: #4dabf7;
       box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.25);
@@ -176,6 +178,10 @@
       <label>Gemini Settings:</label>
       <label for="api-key-input">Gemini API Key:</label>
       <input type="text" id="api-key-input" placeholder="Enter your API key">
+      
+      <label for="prompt-context-input" style="margin-top: 8px;">Custom Prompt Context (Optional):</label>
+      <textarea id="prompt-context-input" placeholder="E.g. Answer in French, keep it under 2 sentences..." rows="3"></textarea>
+      
       <div class="checkbox-container">
         <input type="checkbox" id="check-gemini-mark-input" checked>
         <label for="check-gemini-mark-input">Add Gemini mark to AI generated answers</label>

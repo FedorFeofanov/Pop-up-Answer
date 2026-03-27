@@ -3,6 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Cache DOM elements
   const apiKeyInput = document.getElementById('api-key-input');
+  const promptContextInput = document.getElementById('prompt-context-input');
   const checkButtonInput = document.getElementById('check-button-input');
   const checkMarkInput = document.getElementById('check-gemini-mark-input');
   const versionInput = document.getElementById('check-gemini-25');
@@ -26,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function loadSettings() {
     chrome.storage.sync.get({
       'geminiApiKey': '',
+      'promptContext': '',
       'checkButton': true,
       'checkMark': true,
       'gemini25': false,
@@ -33,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, (data) => {
       // Populate input fields with saved values
       apiKeyInput.value = data.geminiApiKey;
+      promptContextInput.value = data.promptContext;
       checkButtonInput.checked = data.checkButton;
       checkMarkInput.checked = data.checkMark;
       versionInput.checked = data.gemini25;
@@ -46,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Save settings to storage
   function saveSettings() {
     const apiKey = apiKeyInput.value.trim();
+    const promptContext = promptContextInput.value.trim();
     const checkButton = checkButtonInput.checked;
     const checkMark = checkMarkInput.checked;
     const gemini25 = versionInput.checked;
@@ -55,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Save settings
       chrome.storage.sync.set({
         'geminiApiKey': apiKey, 
+        'promptContext': promptContext,
         'checkButton': checkButton,
         'checkMark': checkMark,
         'gemini25': gemini25,
